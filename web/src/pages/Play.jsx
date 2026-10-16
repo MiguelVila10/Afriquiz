@@ -19,14 +19,13 @@ export default function Play() {
   const [session, setSession] = useState(null)
   const [question, setQuestion] = useState(null)
   const [timeLeft, setTimeLeft] = useState(15)
-  const [feedback, setFeedback] = useState(null)
+  const [chosen, setChosen] = useState(undefined) // opção escolhida (null = tempo esgotado)
   const [score, setScore] = useState(0)
   const [total, setTotal] = useState(0)
   const [error, setError] = useState(null)
   const sending = useRef(false)
   const shownAt = useRef(0) // momento (ms) em que a pergunta apareceu, já descontando o tempo gasto
   const [log, setLog] = useState([]) // histórico desta partida para o gráfico final
-  const [streak, setStreak] = useState(0) // respostas certas seguidas
 
   const loadNext = useCallback(async (sessionId) => {
     setPhase('loading')
@@ -41,7 +40,7 @@ export default function Play() {
       return
     }
     const q = data[0]
-    setFeedback(null)
+    setChosen(undefined)
     setQuestion(q)
     setTotal(q.q_total)
     setTimeLeft(q.q_time_left)
@@ -50,30 +49,40 @@ export default function Play() {
     setPhase('question')
   }, [])
 
+  const advance = useRef(null) // passagem automática para a próxima pergunta
+
   const answer = useCallback(
     async (choice) => {
       if (sending.current) return
       sending.current = true
+      const timedOut = choice === null
+      const secs = timedOut ? 15 : Math.min(15, Math.round((performance.now() - shownAt.current) / 100) / 10)
+      setChosen(choice)
+      setPhase('answered')
       const { data, error } = await supabase.rpc('answer_question', { p_session: session, p_choice: choice })
       if (error) {
         setError(friendlyError(error))
+        setChosen(undefined)
+        setPhase('question')
         sending.current = false
         return
       }
       const r = data[0]
-      const timedOut = choice === null
-      const secs = timedOut ? 15 : Math.min(15, Math.round((performance.now() - shownAt.current) / 100) / 10)
       setLog((l) => [
         ...l,
         { position: question.q_position, text: question.q_text, seconds: secs, result: timedOut ? 'timeout' : r.r_correct ? 'correct' : 'wrong' },
       ])
-      setFeedback({ chosen: choice, correct: r.r_correct, correctIndex: r.r_correct_index, explanation: r.r_explanation, finished: r.r_finished })
       setScore(r.r_score)
-      setStreak((n) => (r.r_correct ? n + 1 : 0))
-      setPhase('answered')
+      // Sem revelar a resposta: uma pausa curta para ver a escolha marcada e segue
+      advance.current = setTimeout(() => {
+        if (r.r_finished) setPhase('result')
+        else loadNext(session)
+      }, timedOut ? 1300 : 800)
     },
-    [session, question]
+    [session, question, loadNext]
   )
+
+  useEffect(() => () => clearTimeout(advance.current), [])
 
   // Cronómetro (o servidor também controla o tempo — isto é só o visor)
   useEffect(() => {
@@ -89,7 +98,6 @@ export default function Play() {
   async function start() {
     setError(null)
     setScore(0)
-    setStreak(0)
     setLog([])
     setQuestion(null)
     setPhase('loading')
@@ -103,16 +111,12 @@ export default function Play() {
     loadNext(data)
   }
 
-  function next() {
-    if (feedback?.finished) setPhase('result')
-    else loadNext(session)
-  }
-
   function restart() {
+    clearTimeout(advance.current)
     setPhase('config')
     setSession(null)
     setQuestion(null)
-    setFeedback(null)
+    setChosen(undefined)
   }
 
   if (phase === 'config') {
@@ -197,14 +201,10 @@ export default function Play() {
       question={question}
       phase={phase}
       timeLeft={timeLeft}
-      feedback={feedback}
-      score={score}
-      streak={streak}
-      log={log}
+      chosen={chosen}
       error={error}
       categoryName={categories.find((c) => c.slug === category)?.name ?? ''}
       onAnswer={answer}
-      onNext={next}
       onExit={restart}
     />
   )

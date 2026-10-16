@@ -89,7 +89,10 @@ export default function Layout() {
         </div>
       </header>
       <main className="main">
-        <Outlet />
+        {/* a chave muda a cada página → animação de entrada suave */}
+        <div className="page-anim" key={location.pathname}>
+          <Outlet />
+        </div>
       </main>
       <footer className="footer">
         AfriQuiz · Conhecimento africano, partilhado por todos.

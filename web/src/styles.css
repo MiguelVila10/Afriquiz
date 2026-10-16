@@ -7,6 +7,8 @@
 @font-face { font-family: 'Montserrat'; src: url('/fonts/Montserrat-ExtraBold.ttf') format('truetype'); font-weight: 800; font-display: swap; }
 
 :root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --green: #0f8a37;
   --green-bright: #12b03f;
   --green-dark: #0a5c25;
@@ -502,17 +504,26 @@ textarea { resize: vertical; }
 .place-1 .podium-face .avatar { box-shadow: 0 0 0 3px var(--yellow), 0 6px 16px rgba(0, 0, 0, 0.22); }
 .rank-name { display: inline-flex; align-items: center; gap: 10px; }
 
-/* ---------- Quiz: ecrã de jogo (escuro, imersivo) ---------- */
+/* Escolha de categoria e número de questões: resposta ao toque */
+.category-card, .choice { transition: border-color 0.15s, background 0.15s, transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s; }
+@media (hover: hover) {
+  .category-card:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08); }
+  .choice:hover { transform: translateY(-2px); }
+}
+.category-card:active, .choice:active { transform: scale(0.97); }
+.category-card.is-active, .choice.is-active { animation: select-pop 360ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+.category-card { position: relative; }
+.category-card.is-active::after { content: '✓'; position: absolute; top: 12px; right: 12px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--green); color: #fff; font-weight: 800; font-size: 0.85rem; animation: spring-in 360ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes select-pop { 50% { transform: scale(1.04); } }
+
+/* ---------- Quiz: ecrã de jogo ---------- */
 #root:has(.game) .footer { display: none; }
 .game {
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   flex: 1; display: flex; flex-direction: column; color: #fff;
   background:
-    radial-gradient(1100px 520px at 10% -10%, rgba(18, 176, 63, 0.2), transparent 60%),
-    radial-gradient(900px 480px at 110% 115%, rgba(244, 196, 48, 0.16), transparent 60%),
-    rgba(14, 14, 14, 0.9);
-  backdrop-filter: blur(6px);
+    radial-gradient(1100px 520px at 10% -10%, rgba(18, 176, 63, 0.16), transparent 60%),
+    radial-gradient(900px 480px at 110% 115%, rgba(244, 196, 48, 0.12), transparent 60%),
+    rgba(14, 14, 14, 0.92);
 }
 .game .container { max-width: 1000px; }
 .game-bar { position: sticky; top: 66px; z-index: 5; background: #131313; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
@@ -529,126 +540,138 @@ textarea { resize: vertical; }
 .timer-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 .timer-ring circle { fill: none; stroke-width: 5; }
 .timer-track { stroke: rgba(255, 255, 255, 0.14); }
-.timer-fill { stroke: var(--green-bright); stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: calc(var(--from) * 1); animation: drain var(--dur) linear forwards; transition: stroke 0.4s; }
-.timer-ring.is-warn .timer-fill { stroke: var(--yellow); }
-.timer-ring.is-danger .timer-fill { stroke: #ff4d3a; }
+.timer-fill { stroke: var(--yellow); stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: var(--from); animation: drain var(--dur) linear forwards; transition: stroke 0.3s ease; }
+.timer-ring.is-warn .timer-fill { stroke: #ffd65c; }
+.timer-ring.is-danger .timer-fill { stroke: #ff8a3d; }
 .timer-ring.is-paused .timer-fill { animation-play-state: paused; }
-.timer-ring.is-danger:not(.is-paused) { animation: tick 1s ease-in-out infinite; }
-.timer-ring.is-out { animation: shake 360ms ease-out; }
-.timer-num { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 800; font-size: 1.1rem; font-variant-numeric: tabular-nums; animation: num-in 280ms var(--ease-out); }
+.timer-num { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 800; font-size: 1.1rem; font-variant-numeric: tabular-nums; animation: num-in 220ms var(--ease-out); }
 @keyframes drain { to { stroke-dashoffset: 100; } }
-@keyframes num-in { from { opacity: 0; transform: translateY(-6px) scale(1.25); } }
+@keyframes num-in { from { opacity: 0; transform: translateY(-5px); } }
 
-/* Progresso em segmentos */
+/* Progresso em segmentos (respondidas / atual / por responder) */
 .segments { list-style: none; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding-bottom: 10px; }
 .seg { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.14); overflow: hidden; position: relative; }
-.seg::after { content: ''; position: absolute; inset: 0; transform-origin: left; transform: scaleX(0); }
-.seg.is-correct::after { background: var(--green-bright); }
-.seg.is-wrong::after { background: #e5432f; }
-.seg.is-timeout::after { background: #d39e00; }
-.seg.is-correct::after, .seg.is-wrong::after, .seg.is-timeout::after { transform: scaleX(1); animation: seg-fill 450ms var(--ease-out); }
-.seg.is-current { background: rgba(244, 196, 48, 0.35); animation: breathe 1.4s ease-in-out infinite; }
-@keyframes seg-fill { from { transform: scaleX(0); } }
-@keyframes breathe { 50% { background: rgba(244, 196, 48, 0.75); } }
+.seg::after { content: ''; position: absolute; inset: 0; background: var(--yellow); transform-origin: left; transform: scaleX(0); transition: transform 300ms var(--ease-out); }
+.seg.is-done::after { transform: scaleX(1); }
+.seg.is-current::after { transform: scaleX(1); opacity: 0.35; }
 
-/* Pergunta e respostas */
+/* Pergunta e opções — todas iguais; a escolhida fica marcada */
 .game-stage { flex: 1; display: flex; align-items: center; padding: clamp(24px, 5vh, 56px) 0; }
 .game-stage .container { width: 100%; }
-.q-enter { transition: opacity 0.22s, transform 0.22s; }
-.game.is-busy .q-enter { opacity: 0; transform: translateX(-28px); }
+.q-enter { transition: opacity 200ms ease, transform 200ms var(--ease-out); }
+.game.is-busy .q-enter { opacity: 0; transform: translateX(-20px); }
 .q-kicker { color: var(--yellow); font-weight: 700; font-size: 0.85rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
 .question { font-size: clamp(1.4rem, 3.2vw, 2.3rem); line-height: 1.22; font-weight: 800; margin-bottom: clamp(22px, 4vh, 40px); max-width: 34ch; text-wrap: balance; }
 .answers { list-style: none; display: grid; gap: 12px; }
 @media (min-width: 720px) { .answers { grid-template-columns: 1fr 1fr; gap: 16px; } }
 .answer {
-  --lc: var(--green-bright); --lt: #fff;
   position: relative; width: 100%; height: 100%; min-height: 72px; display: flex; align-items: center; gap: 14px; text-align: left; color: #fff;
   background: rgba(255, 255, 255, 0.06); border: 2px solid rgba(255, 255, 255, 0.14); padding: 14px 18px; border-radius: 14px;
   font-weight: 600; font-size: clamp(1rem, 1.6vw, 1.15rem); cursor: pointer;
-  transition: transform 0.18s var(--ease-out), background 0.18s, border-color 0.18s, opacity 0.3s, box-shadow 0.18s;
+  transition: transform 160ms var(--ease-out), background-color 160ms ease, border-color 160ms ease, opacity 250ms ease, box-shadow 160ms ease;
 }
-.answer.letter-1 { --lc: var(--yellow); --lt: var(--ink); }
-.answer.letter-2 { --lc: #e5432f; }
-.answer.letter-3 { --lc: #fff; --lt: var(--ink); }
-.answer-letter { flex: none; width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; background: var(--lc); color: var(--lt); font-weight: 800; font-size: 0.95rem; transition: transform 0.2s var(--ease-spring); }
-@media (hover: hover) {
-  .answer:hover:not(:disabled) { transform: translateY(-3px); background: rgba(255, 255, 255, 0.1); border-color: var(--lc); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35); }
-  .answer:hover:not(:disabled) .answer-letter { transform: rotate(-8deg) scale(1.08); }
+.answer-letter { flex: none; width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; background: rgba(255, 255, 255, 0.12); color: #fff; font-weight: 800; font-size: 0.95rem; transition: background-color 160ms ease, color 160ms ease, transform 160ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) {
+  .answer:hover:not(:disabled) { transform: translateY(-2px); background: rgba(255, 255, 255, 0.1); border-color: rgba(244, 196, 48, 0.7); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3); }
+  .answer:hover:not(:disabled) .answer-letter { background: var(--yellow); color: var(--ink); }
 }
-.answer:active:not(:disabled) { transform: scale(0.97); transition-duration: 0.08s; }
+.answer:active:not(:disabled) { transform: scale(0.97); }
 .answer:focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; }
 .answer:disabled { cursor: default; }
-.answer.is-correct { background: rgba(18, 176, 63, 0.24); border-color: var(--green-bright); animation: correct-pop 520ms var(--ease-spring); }
-.answer.is-correct .answer-letter { background: var(--green-bright); color: #fff; animation: spring-in 420ms var(--ease-spring); }
-.answer.is-wrong { background: rgba(195, 20, 2, 0.26); border-color: #e5432f; animation: shake 360ms ease-out; }
-.answer.is-wrong .answer-letter { background: #e5432f; color: #fff; }
-.answer.is-dim { opacity: 0.38; transform: scale(0.98); }
-@keyframes correct-pop { 0% { transform: scale(1); } 40% { transform: scale(1.035); box-shadow: 0 0 0 8px rgba(18, 176, 63, 0.18); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(18, 176, 63, 0); } }
+.answer.is-chosen { background: rgba(244, 196, 48, 0.16); border-color: var(--yellow); box-shadow: 0 0 0 4px rgba(244, 196, 48, 0.15); }
+.answer.is-chosen .answer-letter { background: var(--yellow); color: var(--ink); transform: scale(1.08); }
+.answer.is-dim { opacity: 0.4; }
 
-/* Explosão de cor na resposta certa */
-.burst { position: absolute; left: 37px; top: 50%; width: 0; height: 0; pointer-events: none; }
-.burst i { position: absolute; width: 8px; height: 8px; margin: -4px; border-radius: 50%; background: var(--c); animation: burst 700ms var(--ease-out) forwards; }
-.burst i:nth-child(even) { width: 6px; height: 6px; margin: -3px; border-radius: 2px; }
-@keyframes burst { 0% { transform: rotate(var(--a)) translateX(0) scale(1); opacity: 1; } 100% { transform: rotate(var(--a)) translateX(64px) scale(0.2); opacity: 0; } }
-
-/* Entrada da pergunta */
-.q-enter .q-kicker { animation: rise 360ms var(--ease-out) both; }
-.q-enter .question { animation: pop-in 480ms var(--ease-out) 60ms both; }
-.q-enter .answers li { animation: answer-in 460ms var(--ease-spring) both; animation-delay: calc(180ms + var(--i, 0) * 70ms); }
+/* Entrada da pergunta: pergunta e opções em cascata */
+.q-enter .q-kicker { animation: rise 260ms var(--ease-out) both; }
+.q-enter .question { animation: rise 300ms var(--ease-out) 40ms both; }
+.q-enter .answers li { animation: rise 280ms var(--ease-out) both; animation-delay: calc(100ms + var(--i, 0) * 50ms); }
 .q-enter .answers li:nth-child(2) { --i: 1; }
 .q-enter .answers li:nth-child(3) { --i: 2; }
 .q-enter .answers li:nth-child(4) { --i: 3; }
-@keyframes answer-in { from { opacity: 0; transform: translateY(18px) scale(0.95); } }
 
-/* Veredicto */
-.verdict { margin-top: 20px; display: flex; gap: 14px; align-items: flex-start; padding: 14px 18px; border-radius: 14px; background: rgba(255, 255, 255, 0.07); border-left: 5px solid; max-width: 820px; animation: rise 340ms var(--ease-out) 120ms both; }
-.verdict.is-good { border-color: var(--green-bright); }
-.verdict.is-bad { border-color: #e5432f; }
-.verdict.is-time { border-color: #d39e00; }
-.verdict-icon { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; background: rgba(255, 255, 255, 0.12); animation: spring-in 420ms var(--ease-spring) 200ms both; }
-.verdict.is-good .verdict-icon { background: var(--green-bright); }
-.verdict.is-bad .verdict-icon { background: #e5432f; }
-.verdict.is-time .verdict-icon { background: #d39e00; }
-.verdict p { margin-top: 4px; color: #ddd; }
-.key-hint { margin-top: 18px; font-size: 0.8rem; color: #888; animation: rise 400ms var(--ease-out) 500ms both; }
-@media (hover: none) { .key-hint { display: none; } }
-
-/* Rodapé do jogo: pontos, sequência, botão */
-.game-foot { position: sticky; bottom: 0; background: #0f0f0f; border-top: 1px solid rgba(255, 255, 255, 0.08); }
-.game-foot .game-bar-row { min-height: 76px; }
-.score-box { position: relative; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.score-label { color: #aaa; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; }
-.score-num { font-size: 1.7rem; font-weight: 800; font-variant-numeric: tabular-nums; animation: bump 420ms var(--ease-spring); }
-.plus-one { position: absolute; left: 70px; top: -6px; color: var(--green-bright); font-weight: 800; font-size: 1.1rem; pointer-events: none; animation: float-up 900ms var(--ease-out) forwards; }
-.streak { background: rgba(244, 196, 48, 0.16); color: var(--yellow); border: 1px solid rgba(244, 196, 48, 0.4); padding: 4px 12px; border-radius: 999px; font-weight: 700; font-size: 0.88rem; animation: spring-in 460ms var(--ease-spring); }
-.btn-next { animation: spring-in 420ms var(--ease-spring) 250ms both; }
-@keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.35); color: var(--green-bright); } 100% { transform: scale(1); } }
-@keyframes float-up { 0% { opacity: 0; transform: translateY(6px); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-34px); } }
+/* Estado por baixo das opções */
+.game-status { margin-top: 20px; min-height: 34px; font-size: 0.9rem; }
+.key-hint { color: #8a8a8a; }
+@media (hover: none) { .kbd-hint { display: none; } }
+.status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; background: rgba(244, 196, 48, 0.14); color: var(--yellow); font-weight: 700; animation: rise 200ms var(--ease-out); }
+.status-pill.is-time { background: rgba(255, 255, 255, 0.1); color: #fff; }
 .game .spinner { color: #bbb; }
 .game .spinner-dot { border-color: rgba(255, 255, 255, 0.2); border-top-color: var(--yellow); }
-@media (max-width: 600px) {
-  .game-foot .game-bar-row { min-height: 68px; }
-  .score-num { font-size: 1.4rem; }
-  .answer { min-height: 62px; }
+@media (max-width: 600px) { .answer { min-height: 62px; } }
+
+/* ================================================================
+   Movimento em todo o site — interatividade subtil e consistente
+   ================================================================ */
+
+/* Transição entre páginas (a <main> muda de chave a cada rota) */
+.page-anim { flex: 1; display: flex; flex-direction: column; animation: page-in 260ms var(--ease-out) both; }
+@keyframes page-in { from { opacity: 0; transform: translateY(8px); } }
+
+/* Menu: sublinhado que cresce no link ativo e ao passar o rato */
+.nav-links a:not(.btn) { position: relative; transition: color 150ms ease, background-color 150ms ease; }
+.nav-links a:not(.btn):not(.nav-admin)::after { content: ''; position: absolute; left: 10px; right: 10px; bottom: 3px; height: 2px; border-radius: 2px; background: var(--yellow); transform: scaleX(0); transform-origin: left; transition: transform 220ms var(--ease-out); }
+.nav-links a.active:not(.btn):not(.nav-admin)::after { transform: scaleX(1); }
+@media (hover: hover) and (pointer: fine) { .nav-links a:not(.btn):hover::after { transform: scaleX(0.6); } .nav-links a.active:not(.btn):not(.nav-admin):hover::after { transform: scaleX(1); } }
+@media (max-width: 860px) { .nav-links.is-open { animation: menu-in 200ms var(--ease-out); transform-origin: top; } .nav-links a:not(.btn)::after { display: none; } }
+@keyframes menu-in { from { opacity: 0; transform: translateY(-6px); } }
+
+/* Botões: elevação ao passar o rato, compressão ao carregar */
+.btn, .link-btn, .tab, .vote, .stat-btn, .nav-toggle { transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, box-shadow 150ms ease, transform 160ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18); }
+  .stat-btn:hover { transform: translateY(-2px); }
 }
-@media (prefers-reduced-motion: reduce) {
-  .timer-fill { stroke-dashoffset: calc(var(--from) * 1) !important; }
-  .game.is-busy .q-enter { opacity: 1; transform: none; }
-}
-.btn-next { white-space: nowrap; }
-@media (max-width: 600px) {
-  .btn-next { padding-inline: 20px; }
-  .streak { font-size: 0.78rem; padding: 3px 10px; }
+.btn:active:not(:disabled), .tab:active, .vote:active:not(:disabled), .stat-btn:active, .link-btn:active, .nav-toggle:active { transform: scale(0.97); box-shadow: none; }
+
+/* Separadores (Aprender, Comunidade, Ranking, Gestão) */
+.tab.is-active { box-shadow: 0 4px 12px rgba(15, 138, 55, 0.25); }
+
+/* Cartões e linhas: elevação subtil */
+.article-card, .idea, .submission, .review, .user-row, .comment, .panel { transition: transform 200ms var(--ease-out), box-shadow 200ms ease, border-color 200ms ease; }
+@media (hover: hover) and (pointer: fine) {
+  .article-card:hover, .idea:hover { transform: translateY(-3px); box-shadow: 0 12px 26px rgba(0, 0, 0, 0.1); border-color: var(--green); }
+  .user-row:hover { box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08); }
+  .rank-row { transition: transform 160ms var(--ease-out); }
+  .rank-row:hover { transform: translateX(4px); }
+  .table tbody tr { transition: background-color 150ms ease; }
+  .table tbody tr:hover { background: var(--paper-2); }
 }
 
-/* Escolha de categoria e número de questões: resposta ao toque */
-.category-card, .choice { transition: border-color 0.15s, background 0.15s, transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s; }
-@media (hover: hover) {
-  .category-card:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08); }
-  .choice:hover { transform: translateY(-2px); }
+/* Votar: o número salta quando se vota */
+.vote.is-on { animation: vote-pop 260ms var(--ease-out); }
+@keyframes vote-pop { 50% { transform: scale(1.12); } }
+
+/* Campos de formulário */
+input:not([type='radio']):not([type='checkbox']), select, textarea { transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease; }
+
+/* Mensagens e conteúdos que aparecem */
+.alert { animation: rise 220ms var(--ease-out); }
+.spinner { animation: fade-in 200ms ease 150ms both; }
+@keyframes fade-in { from { opacity: 0; } }
+
+/* Listas que chegam do servidor entram em cascata */
+.list > li, .grid-cards > li, .user-list > li { animation: rise 280ms var(--ease-out) both; }
+.list > li:nth-child(2), .grid-cards > li:nth-child(2), .user-list > li:nth-child(2) { animation-delay: 40ms; }
+.list > li:nth-child(3), .grid-cards > li:nth-child(3), .user-list > li:nth-child(3) { animation-delay: 80ms; }
+.list > li:nth-child(4), .grid-cards > li:nth-child(4), .user-list > li:nth-child(4) { animation-delay: 120ms; }
+.list > li:nth-child(5), .grid-cards > li:nth-child(5), .user-list > li:nth-child(5) { animation-delay: 160ms; }
+.list > li:nth-child(n+6), .grid-cards > li:nth-child(n+6), .user-list > li:nth-child(n+6) { animation-delay: 200ms; }
+
+/* Ao rolar a página, os blocos aparecem suavemente (navegadores com suporte) */
+@supports (animation-timeline: view()) {
+  .grid-cards > li:nth-child(n+7), .list > li:nth-child(n+7), .prose > p {
+    animation: scroll-in linear both; animation-timeline: view(); animation-range: entry 0% entry 35%;
+  }
 }
-.category-card:active, .choice:active { transform: scale(0.97); }
-.category-card.is-active, .choice.is-active { animation: select-pop 360ms cubic-bezier(0.34, 1.56, 0.64, 1); }
-.category-card { position: relative; }
-.category-card.is-active::after { content: '✓'; position: absolute; top: 12px; right: 12px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--green); color: #fff; font-weight: 800; font-size: 0.85rem; animation: spring-in 360ms cubic-bezier(0.34, 1.56, 0.64, 1); }
-@keyframes select-pop { 50% { transform: scale(1.04); } }
+@keyframes scroll-in { from { opacity: 0; transform: translateY(20px); } }
+
+/* Avatares */
+.avatar { transition: transform 200ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .nav-me:hover .avatar, .podium-face:hover .avatar { transform: scale(1.08); } }
+
+/* Menos movimento: mantém só mudanças de cor/opacidade */
+@media (prefers-reduced-motion: reduce) {
+  .timer-fill { stroke-dashoffset: var(--from) !important; }
+  .game.is-busy .q-enter { transform: none; }
+}
