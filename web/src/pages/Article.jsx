@@ -11,7 +11,7 @@ export default function Article() {
   useEffect(() => {
     supabase
       .from('articles')
-      .select('id, title, summary, body, sources, status, created_at, categories(name), profiles(username, display_name)')
+      .select('id, title, summary, body, sources, status, created_at, categories(name, slug), profiles(username, display_name)')
       .eq('id', id)
       .maybeSingle()
       .then(({ data }) => setA(data ?? null))
@@ -25,16 +25,20 @@ export default function Article() {
       </Page>
     )
 
+  // ~200 palavras por minuto
+  const minutes = Math.max(1, Math.round((a.body || '').split(/\s+/).length / 200))
+
   return (
     <Page
       back={{ to: '/aprender', label: 'Aprender' }}
       title={a.title}
-      subtitle={`${a.categories?.name ?? ''} · ${a.profiles?.display_name || a.profiles?.username || 'AfriQuiz'} · ${formatDate(a.created_at)}`}
+      subtitle={`${a.categories?.name ?? ''} · ${a.profiles?.display_name || a.profiles?.username || 'AfriQuiz'} · ${formatDate(a.created_at)} · ${minutes} min de leitura`}
       narrow
     >
+      <div className="read-progress" aria-hidden="true" />
       {a.status !== 'approved' && <StatusBadge status={a.status} />}
       {a.summary && <p className="lead">{a.summary}</p>}
-      <div className="prose">
+      <div className="prose article-body">
         <Paragraphs text={a.body} />
       </div>
       {a.sources && (
@@ -44,6 +48,12 @@ export default function Article() {
             <Paragraphs text={a.sources} />
           </div>
         </>
+      )}
+      {a.status === 'approved' && a.categories?.slug && (
+        <div className="article-cta">
+          <p>Já leu? Teste o que sabe sobre <strong>{a.categories.name}</strong>.</p>
+          <Link to={`/jogar?categoria=${a.categories.slug}`} className="btn">Jogar esta categoria</Link>
+        </div>
       )}
     </Page>
   )

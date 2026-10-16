@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { supabase, friendlyError } from '../lib/supabase'
 import { useCategories } from '../lib/categories'
 import { useAuth } from '../lib/auth'
@@ -13,7 +13,8 @@ export default function Play() {
   const { categories, error: catError } = useCategories()
   const { user, profile } = useAuth()
 
-  const [category, setCategory] = useState('africa')
+  const [params] = useSearchParams()
+  const [category, setCategory] = useState(() => params.get('categoria') || 'africa')
   const [count, setCount] = useState(5)
   const [phase, setPhase] = useState('config') // config | loading | question | answered | result
   const [session, setSession] = useState(null)

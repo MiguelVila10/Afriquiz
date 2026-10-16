@@ -624,7 +624,7 @@ textarea { resize: vertical; }
    ================================================================ */
 
 /* Transição entre páginas (a <main> muda de chave a cada rota) */
-.page-anim { flex: 1; display: flex; flex-direction: column; animation: page-in 260ms var(--ease-out) both; }
+.page-anim { flex: 1; display: flex; flex-direction: column; animation: page-in 260ms var(--ease-out) backwards; }
 @keyframes page-in { from { opacity: 0; transform: translateY(8px); } }
 
 /* Menu: sublinhado que cresce no link ativo e ao passar o rato */
@@ -694,3 +694,34 @@ input:not([type='radio']):not([type='checkbox']), select, textarea { transition:
   .timer-fill { stroke-dashoffset: var(--from) !important; }
   .game.is-busy .q-enter { transform: none; }
 }
+
+/* ---------- Aprender: cartões com a cor da categoria ---------- */
+.article-card { display: flex; flex-direction: column; border-top: 4px solid var(--green); }
+.article-card.cat-personalidades { border-top-color: var(--yellow); }
+.article-card.cat-afrocracia { border-top-color: var(--red); }
+.article-card.cat-afrocentrismo { border-top-color: var(--ink); }
+.article-card .article-foot { margin-top: auto; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.read-more { color: var(--green); font-weight: 700; font-size: 0.85rem; white-space: nowrap; transition: transform 200ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .article-card:hover .read-more { transform: translateX(4px); } }
+
+/* Separadores numa só linha no telemóvel (desliza para o lado) */
+@media (max-width: 600px) {
+  .tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -16px; padding-inline: 16px; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: none; }
+}
+
+/* ---------- Página de um conhecimento: leitura confortável ---------- */
+.article-body { color: #2b2b2b; font-size: 1.06rem; line-height: 1.75; gap: 16px; }
+.page .lead { border-left: 4px solid var(--yellow); padding-left: 14px; color: var(--ink); }
+.sources { background: var(--paper-2); border-radius: 10px; padding: 14px 16px; }
+.article-cta { margin-top: 28px; padding: 18px; border-radius: 12px; background: var(--green-tint); display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.article-cta p { margin: 0; }
+/* Barra fina que mostra quanto já se leu (navegadores com suporte) */
+.read-progress { display: none; }
+@supports (animation-timeline: scroll()) {
+  .read-progress { display: block; position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 20; background: var(--yellow); transform-origin: left; animation: read-grow linear both; animation-timeline: scroll(root); }
+}
+@keyframes read-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) { .read-progress { display: none; } }
+.article-card .kind { align-self: flex-start; }

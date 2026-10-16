@@ -59,12 +59,13 @@ export default function Learn() {
         <ul className="grid-cards">
           {articles.map((a) => (
             <li key={a.id}>
-              <Link to={`/aprender/${a.id}`} className="article-card">
+              <Link to={`/aprender/${a.id}`} className={`article-card cat-${a.categories?.slug ?? 'x'}`}>
                 <span className="kind">{a.categories?.name}</span>
                 <h2>{a.title}</h2>
                 {a.summary && <p className="clamp">{a.summary}</p>}
-                <p className="meta">
-                  {a.profiles?.display_name || a.profiles?.username || 'AfriQuiz'} · {formatDate(a.created_at)}
+                <p className="meta article-foot">
+                  <span>{a.profiles?.display_name || a.profiles?.username || 'AfriQuiz'} · {formatDate(a.created_at)}</span>
+                  <span className="read-more" aria-hidden="true">Ler →</span>
                 </p>
               </Link>
             </li>
