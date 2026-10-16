@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { supabase, friendlyError } from '../lib/supabase'
 import { useCategories, formatDate } from '../lib/categories'
 import { Alert, Page, Paragraphs, Spinner, StatusBadge } from '../components/ui'
+import Avatar from '../components/Avatar'
+import { useAvatars } from '../lib/avatars'
 
 const LETTERS = ['A', 'B', 'C', 'D']
 
@@ -189,7 +191,7 @@ function ResetPassword() {
   )
 }
 
-function UserRow({ u }) {
+function UserRow({ u, avatar }) {
   const [open, setOpen] = useState(false)
   const [games, setGames] = useState(null)
 
@@ -204,7 +206,7 @@ function UserRow({ u }) {
   return (
     <li className={open ? 'user-row is-open' : 'user-row'}>
       <button className="user-head" onClick={toggle} aria-expanded={open}>
-        <span className="user-avatar" aria-hidden="true">{(u.display_name || u.username).slice(0, 1).toUpperCase()}</span>
+        <Avatar url={avatar} name={u.display_name || u.username} size={44} />
         <span className="user-id">
           <strong>{u.display_name || u.username}</strong>
           <span className="muted">@{u.username}{u.is_admin && ' · administrador'}</span>
@@ -255,6 +257,7 @@ function Users() {
   const [query, setQuery] = useState('')
   const [rows, setRows] = useState(null)
   const [error, setError] = useState(null)
+  const avatars = useAvatars((rows || []).map((u) => u.username))
 
   useEffect(() => {
     const t = setTimeout(() => setQuery(search), 300)
@@ -289,7 +292,7 @@ function Users() {
       ) : (
         <ul className="user-list">
           {rows.map((u) => (
-            <UserRow key={u.id} u={u} />
+            <UserRow key={u.id} u={u} avatar={avatars.get(u.username)} />
           ))}
         </ul>
       )}

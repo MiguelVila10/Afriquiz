@@ -16,7 +16,7 @@ export function AuthProvider({ children }) {
       return
     }
     const [{ data: p }, { data: admin }] = await Promise.all([
-      supabase.from('profiles').select('id, username, display_name, bio, created_at').eq('id', s.user.id).maybeSingle(),
+      supabase.from('profiles').select('id, username, display_name, bio, avatar_url, created_at').eq('id', s.user.id).maybeSingle(),
       supabase.rpc('is_admin'),
     ])
     setProfile(p ?? null)

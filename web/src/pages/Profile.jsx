@@ -3,6 +3,59 @@ import { supabase, friendlyError } from '../lib/supabase'
 import { formatDate } from '../lib/categories'
 import { useAuth } from '../lib/auth'
 import { Alert, Card, Page, Spinner } from '../components/ui'
+import Avatar from '../components/Avatar'
+import { removeAvatar, uploadAvatar } from '../lib/avatars'
+
+function AvatarEditor({ profile, userId, onChanged }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+
+  async function onFile(e) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setBusy(true)
+    setError(null)
+    try {
+      await uploadAvatar(file, userId)
+      await onChanged()
+    } catch (err) {
+      setError(friendlyError(err))
+    }
+    setBusy(false)
+  }
+
+  async function onRemove() {
+    setBusy(true)
+    setError(null)
+    try {
+      await removeAvatar(userId)
+      await onChanged()
+    } catch (err) {
+      setError(friendlyError(err))
+    }
+    setBusy(false)
+  }
+
+  return (
+    <div className="avatar-editor">
+      <Avatar url={profile.avatar_url} name={profile.display_name || profile.username} size={96} />
+      <div className="avatar-actions">
+        <label className={busy ? 'btn btn-sm is-busy' : 'btn btn-sm'}>
+          {busy ? 'A enviar…' : profile.avatar_url ? 'Mudar foto' : 'Carregar foto'}
+          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onFile} disabled={busy} hidden />
+        </label>
+        {profile.avatar_url && (
+          <button type="button" className="link-btn dark" onClick={onRemove} disabled={busy}>
+            Remover foto
+          </button>
+        )}
+        <small className="muted">JPG, PNG ou WebP. A foto é recortada em quadrado e reduzida automaticamente.</small>
+        <Alert>{error}</Alert>
+      </div>
+    </div>
+  )
+}
 
 export default function Profile() {
   const { profile, user, refreshProfile } = useAuth()
@@ -45,6 +98,7 @@ export default function Profile() {
     <div className="split">
       <Card>
         <h2>O meu perfil</h2>
+        <AvatarEditor profile={profile} userId={user.id} onChanged={refreshProfile} />
         <div className="stats">
           <div><strong>{games}</strong><span>jogos</span></div>
           <div><strong>{points}</strong><span>pontos</span></div>

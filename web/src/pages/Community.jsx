@@ -4,6 +4,8 @@ import { supabase, friendlyError } from '../lib/supabase'
 import { formatDate } from '../lib/categories'
 import { useAuth } from '../lib/auth'
 import { Alert, Page, LoginPrompt, Spinner } from '../components/ui'
+import Avatar from '../components/Avatar'
+import { useAvatars } from '../lib/avatars'
 
 export function VoteButton({ ideaId, votes, voted, onChange }) {
   const { user } = useAuth()
@@ -80,6 +82,7 @@ export default function Community() {
   const { user, isAdmin } = useAuth()
   const [sort, setSort] = useState('recentes')
   const [ideas, setIdeas] = useState(null)
+  const avatars = useAvatars((ideas || []).map((i) => i.author_username))
   const [error, setError] = useState(null)
   const [showForm, setShowForm] = useState(false)
 
@@ -147,7 +150,8 @@ export default function Community() {
                   <Link to={`/comunidade/${i.id}`}>{i.title}</Link>
                 </h2>
                 <p className="clamp">{i.body}</p>
-                <p className="meta">
+                <p className="meta who">
+                  <Avatar url={avatars.get(i.author_username)} name={i.author_display_name || i.author_username} size={22} />
                   {i.author_display_name || i.author_username} · {formatDate(i.created_at)} · {i.comments} comentário
                   {i.comments === 1 ? '' : 's'}
                 </p>

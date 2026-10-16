@@ -9,7 +9,7 @@ const CSP = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self'",
-  "img-src 'self' data:",
+  "img-src 'self' data: https://kqbfjatmdvytwukknkkb.supabase.co",
   "font-src 'self'",
   `connect-src 'self' ${SUPABASE} wss://kqbfjatmdvytwukknkkb.supabase.co`,
   "base-uri 'self'",

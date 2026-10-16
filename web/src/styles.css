@@ -525,3 +525,18 @@ textarea { resize: vertical; }
   .user-mini { display: none; }
   .user-detail { padding-left: 14px; }
 }
+
+/* Fotos de perfil */
+.avatar { flex: none; width: var(--av, 40px); height: var(--av, 40px); border-radius: 50%; object-fit: cover; background: var(--paper-2); }
+.avatar-empty { display: inline-grid; place-items: center; font-weight: 800; color: #fff; background: linear-gradient(135deg, var(--green-bright), var(--green-dark)); font-size: calc(var(--av, 40px) * 0.42); line-height: 1; }
+.avatar-editor { display: flex; gap: 18px; align-items: center; margin: 8px 0 16px; flex-wrap: wrap; }
+.avatar-actions { display: grid; gap: 6px; justify-items: start; flex: 1; min-width: 200px; }
+.avatar-actions .btn { cursor: pointer; }
+.avatar-actions .is-busy { opacity: 0.6; pointer-events: none; }
+.nav-links a.nav-me { display: inline-flex; align-items: center; gap: 8px; }
+.who { display: inline-flex; align-items: center; gap: 8px; }
+.podium-face { position: relative; display: inline-block; margin-bottom: 4px; }
+.podium-face .avatar { box-shadow: 0 0 0 3px var(--paper), 0 4px 12px rgba(0, 0, 0, 0.18); }
+.podium-face .podium-medal { position: absolute; right: -10px; bottom: -6px; font-size: 1.5rem; }
+.place-1 .podium-face .avatar { box-shadow: 0 0 0 3px var(--yellow), 0 6px 16px rgba(0, 0, 0, 0.22); }
+.rank-name { display: inline-flex; align-items: center; gap: 10px; }

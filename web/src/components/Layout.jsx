@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { asset } from '../lib/paths'
+import Avatar from './Avatar'
 
 const BACKGROUNDS = ['images/bg-1.jpg', 'images/bg-2.jpg', 'images/bg-3.jpg', 'images/bg-4.jpg'].map(asset)
 
@@ -68,7 +69,10 @@ export default function Layout() {
             <span className="nav-sep" />
             {user ? (
               <>
-                <NavLink to="/perfil">{profile?.username ?? 'Perfil'}</NavLink>
+                <NavLink to="/perfil" className="nav-me">
+                  <Avatar url={profile?.avatar_url} name={profile?.display_name || profile?.username} size={28} />
+                  {profile?.username ?? 'Perfil'}
+                </NavLink>
                 <button className="link-btn" onClick={signOut}>
                   Sair
                 </button>

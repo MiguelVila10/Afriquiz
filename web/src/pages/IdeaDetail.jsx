@@ -5,6 +5,7 @@ import { formatDate } from '../lib/categories'
 import { useAuth } from '../lib/auth'
 import { Alert, Page, LoginPrompt, Paragraphs, Spinner } from '../components/ui'
 import { VoteButton } from './Community'
+import Avatar from '../components/Avatar'
 
 export default function IdeaDetail() {
   const { id } = useParams()
@@ -19,8 +20,8 @@ export default function IdeaDetail() {
 
   const load = useCallback(async () => {
     const [{ data: i, error: e1 }, { data: c }, { count }, mine] = await Promise.all([
-      supabase.from('ideas').select('id, kind, title, body, hidden, created_at, author_id, profiles(username, display_name)').eq('id', id).maybeSingle(),
-      supabase.from('idea_comments').select('id, body, hidden, created_at, author_id, profiles(username, display_name)').eq('idea_id', id).order('created_at'),
+      supabase.from('ideas').select('id, kind, title, body, hidden, created_at, author_id, profiles(username, display_name, avatar_url)').eq('id', id).maybeSingle(),
+      supabase.from('idea_comments').select('id, body, hidden, created_at, author_id, profiles(username, display_name, avatar_url)').eq('idea_id', id).order('created_at'),
       supabase.from('idea_votes').select('idea_id', { count: 'exact', head: true }).eq('idea_id', id),
       user ? supabase.from('idea_votes').select('idea_id').eq('idea_id', id).eq('user_id', user.id).maybeSingle() : Promise.resolve({ data: null }),
     ])
@@ -98,7 +99,8 @@ export default function IdeaDetail() {
       <ul className="comments">
         {comments.map((c) => (
           <li key={c.id} className={c.hidden ? 'comment is-hidden' : 'comment'}>
-            <p className="meta">
+            <p className="meta who">
+              <Avatar url={c.profiles?.avatar_url} name={c.profiles?.display_name || c.profiles?.username} size={26} />
               <strong>{c.profiles?.display_name || c.profiles?.username}</strong> · {formatDate(c.created_at)}
               {c.hidden && ' · oculto'}
             </p>

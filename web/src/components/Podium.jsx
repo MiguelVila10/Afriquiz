@@ -1,9 +1,12 @@
 import { stagger } from '../lib/motion'
+import { useAvatars } from '../lib/avatars'
+import Avatar from './Avatar'
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
 // Pódio (2.º · 1.º · 3.º) + lista do 4.º em diante. `me` = username do jogador atual.
 export default function Podium({ rows, me, baseDelay = 0, compact = false }) {
+  const avatars = useAvatars((rows || []).map((r) => r.username))
   if (!rows?.length) return null
   const top = rows.slice(0, 3)
   const rest = rows.slice(3)
@@ -17,7 +20,10 @@ export default function Podium({ rows, me, baseDelay = 0, compact = false }) {
           const p = place(r)
           return (
             <li key={r.username} className={`podium-col place-${p + 1} ${r.username === me ? 'is-me' : ''}`} style={stagger(i, baseDelay, 140)}>
-              <span className="podium-medal" aria-hidden="true">{MEDALS[p]}</span>
+              <span className="podium-face">
+                <Avatar url={avatars.get(r.username)} name={r.display_name || r.username} size={p === 0 ? 64 : 52} />
+                <span className="podium-medal" aria-hidden="true">{MEDALS[p]}</span>
+              </span>
               <span className="podium-name">{r.display_name || r.username}</span>
               <span className="podium-points">{r.points} pts</span>
               <div className="podium-block">
@@ -34,6 +40,7 @@ export default function Podium({ rows, me, baseDelay = 0, compact = false }) {
             <li key={r.username} className={r.username === me ? 'rank-row is-me' : 'rank-row'} style={stagger(i, baseDelay + 450, 60)}>
               <span className="rank-pos">{r.pos}</span>
               <span className="rank-name">
+                <Avatar url={avatars.get(r.username)} name={r.display_name || r.username} size={30} />
                 {r.display_name || r.username}
                 {r.username === me && <span className="you-tag">você</span>}
               </span>

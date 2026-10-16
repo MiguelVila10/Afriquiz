@@ -4,6 +4,8 @@ import { useCategories } from '../lib/categories'
 import { useAuth } from '../lib/auth'
 import { Alert, Page, Spinner } from '../components/ui'
 import Podium from '../components/Podium'
+import Avatar from '../components/Avatar'
+import { useAvatars } from '../lib/avatars'
 
 export default function Ranking() {
   const { categories } = useCategories()
@@ -11,6 +13,7 @@ export default function Ranking() {
   const [filter, setFilter] = useState(null)
   const [rows, setRows] = useState(null)
   const [error, setError] = useState(null)
+  const avatars = useAvatars((rows || []).map((r) => r.username))
 
   useEffect(() => {
     setRows(null)
@@ -61,8 +64,13 @@ export default function Ranking() {
                 <tr key={r.username} className={profile?.username === r.username ? 'is-me' : ''}>
                   <td>{r.pos}</td>
                   <td>
-                    <strong>{r.display_name || r.username}</strong>
-                    {r.display_name && <span className="muted"> @{r.username}</span>}
+                    <span className="who">
+                      <Avatar url={avatars.get(r.username)} name={r.display_name || r.username} size={32} />
+                      <span>
+                        <strong>{r.display_name || r.username}</strong>
+                        {r.display_name && <span className="muted"> @{r.username}</span>}
+                      </span>
+                    </span>
                   </td>
                   <td className="num">{r.points}</td>
                   <td className="num">{r.games}</td>
