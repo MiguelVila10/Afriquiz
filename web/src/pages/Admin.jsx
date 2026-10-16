@@ -189,6 +189,114 @@ function ResetPassword() {
   )
 }
 
+function UserRow({ u }) {
+  const [open, setOpen] = useState(false)
+  const [games, setGames] = useState(null)
+
+  async function toggle() {
+    setOpen((o) => !o)
+    if (!games) {
+      const { data } = await supabase.rpc('admin_user_games', { p_user_id: u.id, p_limit: 10 })
+      setGames(data ?? [])
+    }
+  }
+
+  return (
+    <li className={open ? 'user-row is-open' : 'user-row'}>
+      <button className="user-head" onClick={toggle} aria-expanded={open}>
+        <span className="user-avatar" aria-hidden="true">{(u.display_name || u.username).slice(0, 1).toUpperCase()}</span>
+        <span className="user-id">
+          <strong>{u.display_name || u.username}</strong>
+          <span className="muted">@{u.username}{u.is_admin && ' · administrador'}</span>
+        </span>
+        <span className="user-mini">
+          <span><strong>{u.games}</strong> jogos</span>
+          <span><strong>{u.points}</strong> pts</span>
+        </span>
+        <span className="user-chevron" aria-hidden="true">{open ? '▴' : '▾'}</span>
+      </button>
+      {open && (
+        <div className="user-detail">
+          <dl className="user-facts">
+            <div><dt>Email</dt><dd>{u.email}</dd></div>
+            <div><dt>Registado</dt><dd>{formatDate(u.created_at)}</dd></div>
+            <div><dt>Última entrada</dt><dd>{u.last_sign_in_at ? formatDate(u.last_sign_in_at) : '—'}</dd></div>
+            <div><dt>Acerto médio</dt><dd>{u.accuracy ?? 0}%</dd></div>
+            <div><dt>Perguntas enviadas</dt><dd>{u.questions_sent}</dd></div>
+            <div><dt>Conhecimentos</dt><dd>{u.articles_sent}</dd></div>
+            <div><dt>Ideias</dt><dd>{u.ideas}</dd></div>
+            <div><dt>Comentários</dt><dd>{u.comments}</dd></div>
+          </dl>
+          {u.bio && <p className="user-bio">“{u.bio}”</p>}
+          <h3>Últimos jogos</h3>
+          {!games ? (
+            <Spinner />
+          ) : games.length === 0 ? (
+            <p className="muted">Ainda não terminou nenhum jogo.</p>
+          ) : (
+            <ul className="user-games">
+              {games.map((g, i) => (
+                <li key={i}>
+                  <span>{g.category_name}</span>
+                  <strong>{g.score}/{g.total}</strong>
+                  <span className="muted">{formatDate(g.finished_at)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </li>
+  )
+}
+
+function Users() {
+  const [search, setSearch] = useState('')
+  const [query, setQuery] = useState('')
+  const [rows, setRows] = useState(null)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    const t = setTimeout(() => setQuery(search), 300)
+    return () => clearTimeout(t)
+  }, [search])
+
+  useEffect(() => {
+    setRows(null)
+    supabase.rpc('admin_list_users', { p_search: query || null, p_limit: 200 }).then(({ data, error }) => {
+      if (error) setError(friendlyError(error))
+      setRows(data ?? [])
+    })
+  }, [query])
+
+  return (
+    <>
+      <div className="user-toolbar">
+        <input
+          type="search"
+          placeholder="Procurar por nome, utilizador ou email…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          aria-label="Procurar utilizadores"
+        />
+        {rows && <span className="muted">{rows.length} {rows.length === 1 ? 'pessoa' : 'pessoas'}</span>}
+      </div>
+      <Alert>{error}</Alert>
+      {!rows ? (
+        <Spinner />
+      ) : rows.length === 0 ? (
+        <p className="empty">Ninguém encontrado.</p>
+      ) : (
+        <ul className="user-list">
+          {rows.map((u) => (
+            <UserRow key={u.id} u={u} />
+          ))}
+        </ul>
+      )}
+    </>
+  )
+}
+
 export default function Admin() {
   const { categories } = useCategories()
   const [tab, setTab] = useState('perguntas')
@@ -202,6 +310,7 @@ export default function Admin() {
     setError(null)
     const { data: c } = await supabase.rpc('admin_counts')
     setCounts(c?.[0] ?? null)
+    if (tab === 'utilizadores') return
     const res =
       tab === 'perguntas'
         ? await supabase.rpc('admin_list_questions', { p_status: status, p_limit: 100 })
@@ -222,10 +331,10 @@ export default function Admin() {
     <Page title="Gestão" subtitle="Só a sua conta vê esta página. Nada do que é enviado aparece no site sem a sua aprovação.">
         {counts && (
           <div className="stats">
-            <div><strong>{counts.pending_questions}</strong><span>perguntas pendentes</span></div>
-            <div><strong>{counts.pending_articles}</strong><span>conhecimentos pendentes</span></div>
-            <div><strong>{counts.hidden_ideas}</strong><span>ideias ocultas</span></div>
-            <div><strong>{counts.users}</strong><span>utilizadores</span></div>
+            <button className="stat-btn" onClick={() => { setTab('perguntas'); setStatus('pending') }}><strong>{counts.pending_questions}</strong><span>perguntas pendentes</span></button>
+            <button className="stat-btn" onClick={() => { setTab('conhecimentos'); setStatus('pending') }}><strong>{counts.pending_articles}</strong><span>conhecimentos pendentes</span></button>
+            <Link className="stat-btn" to="/comunidade"><strong>{counts.hidden_ideas}</strong><span>ideias ocultas</span></Link>
+            <button className="stat-btn stat-users" onClick={() => setTab('utilizadores')}><strong>{counts.users}</strong><span>pessoas registadas</span></button>
           </div>
         )}
         <p className="hint">Para ocultar ideias ou comentários, use os botões na <Link to="/comunidade">Comunidade</Link>.</p>
@@ -234,13 +343,19 @@ export default function Admin() {
         <div className="tabs">
           <button className={tab === 'perguntas' ? 'tab is-active' : 'tab'} onClick={() => setTab('perguntas')}>Perguntas</button>
           <button className={tab === 'conhecimentos' ? 'tab is-active' : 'tab'} onClick={() => setTab('conhecimentos')}>Conhecimentos</button>
+          <button className={tab === 'utilizadores' ? 'tab is-active' : 'tab'} onClick={() => setTab('utilizadores')}>
+            Utilizadores{counts ? ` (${counts.users})` : ''}
+          </button>
           <span className="tabs-sep" />
-          {[['pending', 'Pendentes'], ['approved', 'Aprovadas'], ['rejected', 'Rejeitadas']].map(([k, l]) => (
-            <button key={k} className={status === k ? 'tab tab-sm is-active' : 'tab tab-sm'} onClick={() => setStatus(k)}>{l}</button>
-          ))}
+          {tab !== 'utilizadores' &&
+            [['pending', 'Pendentes'], ['approved', 'Aprovadas'], ['rejected', 'Rejeitadas']].map(([k, l]) => (
+              <button key={k} className={status === k ? 'tab tab-sm is-active' : 'tab tab-sm'} onClick={() => setStatus(k)}>{l}</button>
+            ))}
         </div>
         <Alert>{error}</Alert>
-        {!items ? (
+        {tab === 'utilizadores' ? (
+          <Users />
+        ) : !items ? (
           <Spinner />
         ) : items.length === 0 ? (
           <p className="empty">Nada aqui. 🎉</p>
