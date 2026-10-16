@@ -485,3 +485,8 @@ textarea { resize: vertical; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
 }
+
+/* Gestão: repor senha */
+.reset-box { margin-top: 10px; }
+.reset-form { grid-template-columns: 1fr; max-width: 680px; align-items: end; }
+@media (min-width: 760px) { .reset-form { grid-template-columns: 1fr 1fr auto; } .reset-form .alert { grid-column: 1 / -1; } }

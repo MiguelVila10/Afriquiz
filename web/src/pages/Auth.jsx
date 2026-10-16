@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { supabase, friendlyError } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { Alert } from '../components/ui'
-import { asset, siteUrl } from '../lib/paths'
+import { asset } from '../lib/paths'
 
 // Ecrã dividido: marca à esquerda (sobre o fundo), formulário à direita. Em telemóvel fica empilhado.
 function AuthShell({ children }) {
@@ -50,14 +50,9 @@ export function Login() {
     if (error) setError(friendlyError(error))
   }
 
-  async function forgot() {
+  function forgot() {
     setError(null)
-    if (!email.trim()) return setError('Escreva o seu email primeiro.')
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: siteUrl('nova-senha'),
-    })
-    if (error) setError(friendlyError(error))
-    else setInfo('Se existir uma conta com este email, vai receber um link para criar nova senha.')
+    setInfo('Peça ao administrador do AfriQuiz para repor a sua senha, indicando o seu nome de utilizador.')
   }
 
   return (
@@ -89,9 +84,9 @@ export function Login() {
 }
 
 export function Register() {
+  const navigate = useNavigate()
   const [form, setForm] = useState({ username: '', display_name: '', email: '', password: '', confirm: '' })
   const [error, setError] = useState(null)
-  const [done, setDone] = useState(false)
   const [busy, setBusy] = useState(false)
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
 
@@ -104,37 +99,21 @@ export function Register() {
     if (form.password !== form.confirm) return setError('As senhas não coincidem.')
 
     setBusy(true)
-    const { data: free } = await supabase.rpc('username_available', { p_username: username })
-    if (free === false) {
-      setBusy(false)
-      return setError('Este nome de utilizador já está a ser usado.')
-    }
-    const { error } = await supabase.auth.signUp({
-      email: form.email.trim(),
-      password: form.password,
-      options: {
-        data: { username, display_name: form.display_name.trim() || null },
-        emailRedirectTo: siteUrl(),
-      },
+    // A conta é criada já confirmada na base de dados (sem email) e a pessoa entra logo.
+    const { error } = await supabase.rpc('register_user', {
+      p_username: username,
+      p_email: form.email.trim(),
+      p_password: form.password,
+      p_display_name: form.display_name.trim() || null,
     })
+    if (error) {
+      setBusy(false)
+      return setError(friendlyError(error))
+    }
+    const { error: loginError } = await supabase.auth.signInWithPassword({ email: form.email.trim(), password: form.password })
     setBusy(false)
-    if (error) return setError(friendlyError(error))
-    setDone(true)
-  }
-
-  if (done) {
-    return (
-      <AuthShell>
-        <h1>Quase lá!</h1>
-        <p>
-          Enviámos um email para <strong>{form.email}</strong>. Abra o link de confirmação para ativar a conta e depois
-          entre.
-        </p>
-        <Link to="/entrar" className="btn">
-          Ir para Entrar
-        </Link>
-      </AuthShell>
-    )
+    if (loginError) return setError('Conta criada! Agora entre com o seu email e senha. (' + friendlyError(loginError) + ')')
+    navigate('/jogar', { replace: true })
   }
 
   return (
@@ -153,7 +132,7 @@ export function Register() {
         <label>
           Email
           <input type="email" required autoComplete="email" value={form.email} onChange={set('email')} />
-          <small>Nunca é mostrado a outras pessoas.</small>
+          <small>Usado para entrar. Nunca é mostrado a outras pessoas.</small>
         </label>
         <label>
           Senha

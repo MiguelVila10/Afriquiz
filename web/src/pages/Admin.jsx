@@ -148,6 +148,47 @@ function ArticleReview({ a, onChanged }) {
   )
 }
 
+function ResetPassword() {
+  const [open, setOpen] = useState(false)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [msg, setMsg] = useState(null)
+  const [error, setError] = useState(null)
+
+  async function submit(e) {
+    e.preventDefault()
+    setMsg(null)
+    setError(null)
+    const { error } = await supabase.rpc('admin_reset_password', { p_username: username.trim(), p_new_password: password })
+    if (error) return setError(friendlyError(error))
+    setMsg(`Senha de @${username.trim()} reposta. Envie-lhe a nova senha em privado.`)
+    setPassword('')
+  }
+
+  return (
+    <div className="reset-box">
+      <button className="link-btn dark" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+        {open ? 'Fechar' : 'Repor a senha de um utilizador'}
+      </button>
+      {open && (
+        <form className="form reset-form" onSubmit={submit}>
+          <label>
+            Nome de utilizador
+            <input required value={username} onChange={(e) => setUsername(e.target.value)} placeholder="ex.: kandimba_23" />
+          </label>
+          <label>
+            Nova senha (mín. 8)
+            <input required minLength={8} maxLength={72} value={password} onChange={(e) => setPassword(e.target.value)} />
+          </label>
+          <button className="btn btn-sm">Repor senha</button>
+          <Alert>{error}</Alert>
+          <Alert kind="success">{msg}</Alert>
+        </form>
+      )}
+    </div>
+  )
+}
+
 export default function Admin() {
   const { categories } = useCategories()
   const [tab, setTab] = useState('perguntas')
@@ -188,6 +229,7 @@ export default function Admin() {
           </div>
         )}
         <p className="hint">Para ocultar ideias ou comentários, use os botões na <Link to="/comunidade">Comunidade</Link>.</p>
+        <ResetPassword />
 
         <div className="tabs">
           <button className={tab === 'perguntas' ? 'tab is-active' : 'tab'} onClick={() => setTab('perguntas')}>Perguntas</button>
