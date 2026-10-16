@@ -5,6 +5,7 @@ import { useCategories } from '../lib/categories'
 import { useAuth } from '../lib/auth'
 import { Alert, Page, Spinner } from '../components/ui'
 import Result from '../components/Result'
+import GameScreen from '../components/GameScreen'
 
 const COUNTS = [5, 10, 15, 20, 25]
 
@@ -25,10 +26,10 @@ export default function Play() {
   const sending = useRef(false)
   const shownAt = useRef(0) // momento (ms) em que a pergunta apareceu, já descontando o tempo gasto
   const [log, setLog] = useState([]) // histórico desta partida para o gráfico final
+  const [streak, setStreak] = useState(0) // respostas certas seguidas
 
   const loadNext = useCallback(async (sessionId) => {
     setPhase('loading')
-    setFeedback(null)
     const { data, error } = await supabase.rpc('next_question', { p_session: sessionId })
     if (error) {
       setError(friendlyError(error))
@@ -40,6 +41,7 @@ export default function Play() {
       return
     }
     const q = data[0]
+    setFeedback(null)
     setQuestion(q)
     setTotal(q.q_total)
     setTimeLeft(q.q_time_left)
@@ -67,6 +69,7 @@ export default function Play() {
       ])
       setFeedback({ chosen: choice, correct: r.r_correct, correctIndex: r.r_correct_index, explanation: r.r_explanation, finished: r.r_finished })
       setScore(r.r_score)
+      setStreak((n) => (r.r_correct ? n + 1 : 0))
       setPhase('answered')
     },
     [session, question]
@@ -86,7 +89,9 @@ export default function Play() {
   async function start() {
     setError(null)
     setScore(0)
+    setStreak(0)
     setLog([])
+    setQuestion(null)
     setPhase('loading')
     const { data, error } = await supabase.rpc('start_quiz', { p_category: category, p_count: count })
     if (error) {
@@ -179,7 +184,7 @@ export default function Play() {
     )
   }
 
-  if (phase === 'loading' || !question) {
+  if (!question) {
     return (
       <div className="game">
         <div className="game-stage"><Spinner /></div>
@@ -187,69 +192,20 @@ export default function Play() {
     )
   }
 
-  const urgent = phase === 'question' && timeLeft <= 5
   return (
-    <div className="game">
-      <div className="game-bar">
-        <div className="container game-bar-row">
-          <button className="link-btn" onClick={restart}>← Sair</button>
-          <span className="quiz-progress">
-            Pergunta <strong>{question.q_position}</strong> de <strong>{question.q_total}</strong>
-          </span>
-          <span className={urgent ? 'timer is-urgent' : 'timer'} aria-live="polite">
-            {feedback?.chosen === null ? 'Tempo!' : `${timeLeft}s`}
-          </span>
-        </div>
-        <div className="progress" aria-hidden="true">
-          <div className="progress-bar" style={{ '--p': `${((question.q_position - (phase === 'answered' ? 0 : 1)) / question.q_total) * 100}%` }} />
-        </div>
-      </div>
-
-      <div className="game-stage">
-        <div className="container q-enter" key={question.q_position}>
-          <h1 className="question">{question.q_text}</h1>
-
-          <ul className="answers">
-            {question.q_options.map((opt, i) => {
-              let cls = 'answer'
-              if (feedback) {
-                if (i === feedback.correctIndex) cls += ' is-correct'
-                else if (i === feedback.chosen) cls += ' is-wrong'
-              }
-              return (
-                <li key={i}>
-                  <button className={cls} onClick={() => answer(i)} disabled={phase !== 'question'}>
-                    <span className="answer-letter" aria-hidden="true">{'ABCD'[i]}</span>
-                    {opt}
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-
-          <Alert>{error}</Alert>
-
-          {feedback && (
-            <div className={feedback.correct ? 'verdict is-good' : 'verdict is-bad'} role="status">
-              <strong>
-                {feedback.correct ? 'Certo!' : feedback.chosen === null ? 'O tempo acabou.' : 'Não foi desta.'}
-              </strong>
-              {feedback.explanation && <p>{feedback.explanation}</p>}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="game-foot">
-        <div className="container game-bar-row">
-          <span>Pontos: <strong>{score}</strong></span>
-          {phase === 'answered' && (
-            <button className="btn btn-lg" onClick={next} autoFocus>
-              {feedback?.finished ? 'Ver resultado' : 'Próxima'}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    <GameScreen
+      question={question}
+      phase={phase}
+      timeLeft={timeLeft}
+      feedback={feedback}
+      score={score}
+      streak={streak}
+      log={log}
+      error={error}
+      categoryName={categories.find((c) => c.slug === category)?.name ?? ''}
+      onAnswer={answer}
+      onNext={next}
+      onExit={restart}
+    />
   )
 }
