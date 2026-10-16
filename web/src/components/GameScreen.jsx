@@ -34,7 +34,7 @@ function Segments({ total, current, answered }) {
   )
 }
 
-export default function GameScreen({ question, phase, timeLeft, chosen, error, categoryName, onAnswer, onExit }) {
+export default function GameScreen({ question, phase, timeLeft, chosen, feedback, score, error, categoryName, onAnswer, onNext, onExit }) {
   const live = phase === 'question'
   const answered = chosen !== undefined
   const timedOut = chosen === null
@@ -79,11 +79,17 @@ export default function GameScreen({ question, phase, timeLeft, chosen, error, c
           <ul className={answered ? 'answers is-locked' : 'answers'}>
             {question.q_options.map((opt, i) => {
               let cls = 'answer'
-              if (answered) cls += i === chosen ? ' is-chosen' : ' is-dim'
+              let mark = LETTERS[i]
+              if (feedback) {
+                // Depois da resposta do servidor: certa a verde, errada a vermelho
+                if (i === feedback.correctIndex) { cls += ' is-correct'; mark = '✓' }
+                else if (i === chosen) { cls += ' is-wrong'; mark = '✗' }
+                else cls += ' is-dim'
+              } else if (answered) cls += i === chosen ? ' is-chosen' : ' is-dim'
               return (
                 <li key={i}>
                   <button className={cls} onClick={() => onAnswer(i)} disabled={!live} aria-pressed={i === chosen}>
-                    <span className="answer-letter" aria-hidden="true">{LETTERS[i]}</span>
+                    <span className="answer-letter" aria-hidden="true">{mark}</span>
                     <span className="answer-text">{opt}</span>
                   </button>
                 </li>
@@ -93,15 +99,33 @@ export default function GameScreen({ question, phase, timeLeft, chosen, error, c
 
           <Alert>{error}</Alert>
 
-          <p className="game-status" role="status">
-            {timedOut ? (
-              <span className="status-pill is-time" key="t">⏱ Tempo esgotado</span>
-            ) : answered ? (
-              <span className="status-pill" key="a">Resposta registada</span>
-            ) : (
-              <span className="key-hint">Toque numa opção{' '}<span className="kbd-hint">ou use as teclas 1–4</span></span>
-            )}
-          </p>
+          {feedback ? (
+            <div className={feedback.correct ? 'verdict is-good' : timedOut ? 'verdict is-time' : 'verdict is-bad'} role="status">
+              <span className="verdict-icon" aria-hidden="true">{feedback.correct ? '✓' : timedOut ? '⏱' : '✗'}</span>
+              <div>
+                <strong>{feedback.correct ? 'Certo!' : timedOut ? 'O tempo acabou.' : 'Não foi desta.'}</strong>
+                {feedback.explanation && <p>{feedback.explanation}</p>}
+              </div>
+            </div>
+          ) : (
+            <p className="game-status">
+              {!answered && <span className="key-hint">Toque numa opção <span className="kbd-hint">ou use as teclas 1–4</span></span>}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="game-foot">
+        <div className="container game-bar-row">
+          <div className="score-box">
+            <span className="score-label">Pontos</span>
+            <strong className="score-num" key={score}>{score}</strong>
+          </div>
+          {feedback && (
+            <button className="btn btn-lg btn-next" onClick={onNext} autoFocus>
+              {feedback.finished ? 'Ver resultado' : 'Próxima →'}
+            </button>
+          )}
         </div>
       </div>
     </div>

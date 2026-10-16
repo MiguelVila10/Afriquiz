@@ -20,6 +20,7 @@ export default function Play() {
   const [question, setQuestion] = useState(null)
   const [timeLeft, setTimeLeft] = useState(15)
   const [chosen, setChosen] = useState(undefined) // opção escolhida (null = tempo esgotado)
+  const [feedback, setFeedback] = useState(null) // { correct, correctIndex, explanation, finished }
   const [score, setScore] = useState(0)
   const [total, setTotal] = useState(0)
   const [error, setError] = useState(null)
@@ -41,6 +42,7 @@ export default function Play() {
     }
     const q = data[0]
     setChosen(undefined)
+    setFeedback(null)
     setQuestion(q)
     setTotal(q.q_total)
     setTimeLeft(q.q_time_left)
@@ -48,8 +50,6 @@ export default function Play() {
     sending.current = false
     setPhase('question')
   }, [])
-
-  const advance = useRef(null) // passagem automática para a próxima pergunta
 
   const answer = useCallback(
     async (choice) => {
@@ -73,16 +73,15 @@ export default function Play() {
         { position: question.q_position, text: question.q_text, seconds: secs, result: timedOut ? 'timeout' : r.r_correct ? 'correct' : 'wrong' },
       ])
       setScore(r.r_score)
-      // Sem revelar a resposta: uma pausa curta para ver a escolha marcada e segue
-      advance.current = setTimeout(() => {
-        if (r.r_finished) setPhase('result')
-        else loadNext(session)
-      }, timedOut ? 1300 : 800)
+      setFeedback({ correct: r.r_correct, correctIndex: r.r_correct_index, explanation: r.r_explanation, finished: r.r_finished })
     },
-    [session, question, loadNext]
+    [session, question]
   )
 
-  useEffect(() => () => clearTimeout(advance.current), [])
+  function next() {
+    if (feedback?.finished) setPhase('result')
+    else loadNext(session)
+  }
 
   // Cronómetro (o servidor também controla o tempo — isto é só o visor)
   useEffect(() => {
@@ -112,11 +111,11 @@ export default function Play() {
   }
 
   function restart() {
-    clearTimeout(advance.current)
     setPhase('config')
     setSession(null)
     setQuestion(null)
     setChosen(undefined)
+    setFeedback(null)
   }
 
   if (phase === 'config') {
@@ -202,9 +201,12 @@ export default function Play() {
       phase={phase}
       timeLeft={timeLeft}
       chosen={chosen}
+      feedback={feedback}
+      score={score}
       error={error}
       categoryName={categories.find((c) => c.slug === category)?.name ?? ''}
       onAnswer={answer}
+      onNext={next}
       onExit={restart}
     />
   )
