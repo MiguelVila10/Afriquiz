@@ -8,7 +8,7 @@ function TimerRing({ startLeft, timeLeft, running, timedOut }) {
   const level = timeLeft <= 5 ? 'is-danger' : timeLeft <= 10 ? 'is-warn' : ''
   return (
     <div
-      className={`timer-ring ${level} ${running ? '' : 'is-paused'}`}
+      className={`timer-ring ${timedOut ? 'is-danger is-out' : level} ${running ? '' : 'is-paused'}`}
       style={{ '--from': `${((15 - startLeft) / 15) * 100}`, '--dur': `${startLeft}s` }}
       role="timer"
       aria-label={`${timeLeft} segundos`}
@@ -17,7 +17,8 @@ function TimerRing({ startLeft, timeLeft, running, timedOut }) {
         <circle className="timer-track" cx="26" cy="26" r="22" pathLength="100" />
         <circle className="timer-fill" cx="26" cy="26" r="22" pathLength="100" />
       </svg>
-      <span className="timer-num" key={timedOut ? 'out' : timeLeft}>{timedOut ? 0 : timeLeft}</span>
+      <span className="timer-num" key={timedOut ? 'out' : timeLeft}>{timedOut ? '⏱' : timeLeft}</span>
+      {timedOut && <span className="timer-wave" aria-hidden="true" />}
     </div>
   )
 }

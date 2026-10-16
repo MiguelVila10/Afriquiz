@@ -538,7 +538,17 @@ textarea { resize: vertical; }
 .timer-track { stroke: rgba(255, 255, 255, 0.14); }
 .timer-fill { stroke: var(--yellow); stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: var(--from); animation: drain var(--dur) linear forwards; transition: stroke 0.3s ease; }
 .timer-ring.is-warn .timer-fill { stroke: #ffd65c; }
-.timer-ring.is-danger .timer-fill { stroke: #ff8a3d; }
+.timer-ring.is-danger .timer-fill { stroke: #e5432f; }
+.timer-ring.is-danger .timer-num { color: #ff6b5a; animation: num-tick 320ms var(--ease-out); }
+@keyframes num-tick { from { transform: scale(1.3); } }
+/* Tempo esgotado: o anel acaba de esvaziar, solta uma onda e abana */
+.timer-ring.is-out .timer-fill { animation: none; stroke-dashoffset: 100; transition: stroke-dashoffset 250ms var(--ease-out); }
+.timer-ring.is-out .timer-track { stroke: rgba(229, 67, 47, 0.35); }
+.timer-ring.is-out { animation: shake 400ms ease-out 150ms; }
+.timer-ring.is-out .timer-num { color: #fff; font-size: 1.15rem; animation: out-pop 300ms var(--ease-out) 150ms both; }
+@keyframes out-pop { from { opacity: 0; transform: scale(0.6) rotate(-20deg); } }
+.timer-wave { position: absolute; inset: 0; border-radius: 50%; border: 3px solid #e5432f; pointer-events: none; animation: wave 700ms var(--ease-out) 2 both; }
+@keyframes wave { from { opacity: 0.9; transform: scale(0.9); } to { opacity: 0; transform: scale(1.9); } }
 .timer-ring.is-paused .timer-fill { animation-play-state: paused; }
 .timer-num { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 800; font-size: 1.1rem; font-variant-numeric: tabular-nums; animation: num-in 220ms var(--ease-out); }
 @keyframes drain { to { stroke-dashoffset: 100; } }
