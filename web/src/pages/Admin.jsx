@@ -112,10 +112,26 @@ function QuestionReview({ q, categories, onChanged }) {
   )
 }
 
-function ArticleReview({ a, onChanged }) {
+function ArticleReview({ a, categories, onChanged }) {
   const [open, setOpen] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [f, setF] = useState({ category: a.categories?.slug ?? 'africa', title: a.title, summary: a.summary ?? '', body: a.body, sources: a.sources ?? '' })
   const [note, setNote] = useState('')
   const [error, setError] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
+
+  async function save() {
+    setBusy(true)
+    setError(null)
+    const { error } = await supabase.rpc('admin_update_article', {
+      p_id: a.id, p_category: f.category, p_title: f.title, p_summary: f.summary, p_body: f.body, p_sources: f.sources,
+    })
+    setBusy(false)
+    if (error) return setError(friendlyError(error))
+    setEditing(false)
+    onChanged()
+  }
 
   async function review(approve) {
     const { error } = await supabase.rpc('admin_review_article', { p_id: a.id, p_approve: approve, p_note: note || null })
@@ -127,8 +143,28 @@ function ArticleReview({ a, onChanged }) {
     <li className="review">
       <div className="row row-between">
         <span className="kind">{a.categories?.name}</span>
-        <span className="meta">por @{a.profiles?.username} · {formatDate(a.created_at)} <StatusBadge status={a.status} /></span>
+        <span className="meta">{a.profiles?.username ? `por @${a.profiles.username}` : 'AfriQuiz'} · {formatDate(a.created_at)} <StatusBadge status={a.status} /></span>
       </div>
+      {editing ? (
+        <div className="form">
+          <label>
+            Categoria
+            <select value={f.category} onChange={set('category')}>
+              {categories.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+            </select>
+          </label>
+          <label>Título<input maxLength={120} value={f.title} onChange={set('title')} /></label>
+          <label>Resumo<textarea rows={2} maxLength={300} value={f.summary} onChange={set('summary')} /></label>
+          <label>Texto<textarea rows={14} maxLength={20000} value={f.body} onChange={set('body')} /></label>
+          <label>Fontes<textarea rows={4} maxLength={1000} value={f.sources} onChange={set('sources')} /></label>
+          <div className="row">
+            <button className="btn btn-sm" onClick={save} disabled={busy}>Guardar alterações</button>
+            <button className="btn btn-sm btn-outline" onClick={() => setEditing(false)}>Cancelar</button>
+          </div>
+          <Alert>{error}</Alert>
+        </div>
+      ) : (
+      <>
       <p className="review-q">{a.title}</p>
       {a.summary && <p className="muted">{a.summary}</p>}
       <button className="link-btn dark" onClick={() => setOpen((o) => !o)}>{open ? 'Esconder texto' : 'Ler texto completo'}</button>
@@ -143,9 +179,12 @@ function ArticleReview({ a, onChanged }) {
         <div className="row">
           {a.status !== 'approved' && <button className="btn btn-sm" onClick={() => review(true)}>Aprovar</button>}
           {a.status !== 'rejected' && <button className="btn btn-sm btn-danger" onClick={() => review(false)}>Rejeitar</button>}
+          <button className="btn btn-sm btn-outline" onClick={() => setEditing(true)}>Editar</button>
         </div>
       </div>
       <Alert>{error}</Alert>
+      </>
+      )}
     </li>
   )
 }
@@ -319,7 +358,7 @@ export default function Admin() {
         ? await supabase.rpc('admin_list_questions', { p_status: status, p_limit: 100 })
         : await supabase
             .from('articles')
-            .select('id, title, summary, body, sources, status, created_at, categories(name), profiles(username)')
+            .select('id, title, summary, body, sources, status, created_at, categories(name, slug), profiles(username)')
             .eq('status', status)
             .order('created_at')
     if (res.error) setError(friendlyError(res.error))
@@ -366,7 +405,7 @@ export default function Admin() {
           <ul className="list">
             {tab === 'perguntas'
               ? items.map((q) => <QuestionReview key={q.id} q={q} categories={categories} onChanged={load} />)
-              : items.map((a) => <ArticleReview key={a.id} a={a} onChanged={load} />)}
+              : items.map((a) => <ArticleReview key={a.id} a={a} categories={categories} onChanged={load} />)}
           </ul>
         )}
     </Page>
