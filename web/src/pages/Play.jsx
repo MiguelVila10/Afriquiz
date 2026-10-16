@@ -9,14 +9,33 @@ import GameScreen from '../components/GameScreen'
 
 const COUNTS = [5, 10, 15, 20, 25]
 
+// Partida em curso guardada nesta aba: ao atualizar a página o jogo continua.
+// O tempo de cada pergunta é controlado pelo servidor, por isso atualizar não dá tempo extra.
+const SAVE_KEY = 'afriquiz.partida'
+function readSaved() {
+  try {
+    return JSON.parse(sessionStorage.getItem(SAVE_KEY)) || null
+  } catch {
+    return null
+  }
+}
+function writeSaved(v) {
+  try {
+    if (v) sessionStorage.setItem(SAVE_KEY, JSON.stringify(v))
+    else sessionStorage.removeItem(SAVE_KEY)
+  } catch {
+    /* sem armazenamento: o jogo funciona na mesma, só não retoma */
+  }
+}
+
 export default function Play() {
   const { categories, error: catError } = useCategories()
-  const { user, profile } = useAuth()
+  const { user, profile, ready } = useAuth()
 
   const [params] = useSearchParams()
   const [category, setCategory] = useState(() => params.get('categoria') || 'africa')
   const [count, setCount] = useState(5)
-  const [phase, setPhase] = useState('config') // config | loading | question | answered | result
+  const [phase, setPhase] = useState(() => (readSaved() ? 'loading' : 'config')) // config | loading | question | answered | result
   const [session, setSession] = useState(null)
   const [question, setQuestion] = useState(null)
   const [timeLeft, setTimeLeft] = useState(15)
@@ -29,11 +48,13 @@ export default function Play() {
   const shownAt = useRef(0) // momento (ms) em que a pergunta apareceu, já descontando o tempo gasto
   const [log, setLog] = useState([]) // histórico desta partida para o gráfico final
 
-  const loadNext = useCallback(async (sessionId) => {
+  const loadNext = useCallback(async (sessionId, resuming = false) => {
     setPhase('loading')
     const { data, error } = await supabase.rpc('next_question', { p_session: sessionId })
     if (error) {
-      setError(friendlyError(error))
+      writeSaved(null)
+      if (!resuming) setError(friendlyError(error))
+      setQuestion(null)
       setPhase('config')
       return
     }
@@ -51,6 +72,27 @@ export default function Play() {
     sending.current = false
     setPhase('question')
   }, [])
+
+  // Ao abrir (ou atualizar) a página: retoma a partida guardada, depois de saber quem está ligado
+  const resumed = useRef(false)
+  useEffect(() => {
+    if (!ready || resumed.current) return
+    resumed.current = true
+    const saved = readSaved()
+    if (!saved?.session) return
+    setSession(saved.session)
+    setCategory(saved.category)
+    setLog(saved.log || [])
+    setScore(saved.score || 0)
+    setTotal(saved.total || 0)
+    loadNext(saved.session, true)
+  }, [ready, loadNext])
+
+  // Guarda o progresso sempre que muda
+  useEffect(() => {
+    if (phase === 'result') writeSaved(null) // partida terminada: nada para retomar
+    else if (session) writeSaved({ session, category, log, score, total })
+  }, [phase, session, category, log, score, total])
 
   const answer = useCallback(
     async (choice) => {
@@ -112,6 +154,7 @@ export default function Play() {
   }
 
   function restart() {
+    writeSaved(null)
     setPhase('config')
     setSession(null)
     setQuestion(null)
