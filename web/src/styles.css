@@ -588,11 +588,11 @@ textarea { resize: vertical; }
 .verdict { margin-top: 20px; display: flex; gap: 14px; align-items: flex-start; padding: 14px 18px; border-radius: 14px; background: rgba(18, 18, 18, 0.8); border-left: 5px solid; max-width: 820px; animation: rise 240ms var(--ease-out) both; }
 .verdict.is-good { border-color: var(--green-bright); }
 .verdict.is-bad { border-color: #e5432f; }
-.verdict.is-time { border-color: #d39e00; }
+.verdict.is-time { border-color: #e5432f; }
 .verdict-icon { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; color: #fff; }
 .verdict.is-good .verdict-icon { background: var(--green-bright); }
 .verdict.is-bad .verdict-icon { background: #e5432f; }
-.verdict.is-time .verdict-icon { background: #d39e00; }
+.verdict.is-time .verdict-icon { background: #e5432f; }
 .verdict p { margin-top: 4px; color: #ddd; }
 .game-foot { position: sticky; bottom: 0; background: #121212; border-top: 1px solid rgba(255, 255, 255, 0.08); }
 .game-foot .game-bar-row { min-height: 72px; }
