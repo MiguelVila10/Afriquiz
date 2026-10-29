@@ -4,15 +4,15 @@ import react from '@vitejs/plugin-react'
 // Política de segurança (CSP) também como <meta>, para alojamentos que não
 // permitem cabeçalhos próprios (ex.: GitHub Pages). Só no build — o modo dev
 // do Vite precisa de scripts inline.
-const SUPABASE = 'https://kqbfjatmdvytwukknkkb.supabase.co'
+const SUPABASE = 'https://aokoiqvyqokrsawzyohz.supabase.co'
 const CSP = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self'",
-  "img-src 'self' data: https://kqbfjatmdvytwukknkkb.supabase.co https://i.ytimg.com",
+  "img-src 'self' data: https://aokoiqvyqokrsawzyohz.supabase.co https://i.ytimg.com",
   "frame-src https://www.youtube-nocookie.com",
   "font-src 'self'",
-  `connect-src 'self' ${SUPABASE} wss://kqbfjatmdvytwukknkkb.supabase.co`,
+  `connect-src 'self' ${SUPABASE} wss://aokoiqvyqokrsawzyohz.supabase.co`,
   "base-uri 'self'",
   "form-action 'self'",
 ].join('; ')

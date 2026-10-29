@@ -4,7 +4,7 @@
 
 alter table public.profiles
   add column avatar_url text
-  check (avatar_url is null or avatar_url like 'https://kqbfjatmdvytwukknkkb.supabase.co/storage/v1/object/public/avatars/%');
+  check (avatar_url is null or avatar_url like 'https://aokoiqvyqokrsawzyohz.supabase.co/storage/v1/object/public/avatars/%');
 
 grant update (avatar_url) on public.profiles to authenticated;
 
