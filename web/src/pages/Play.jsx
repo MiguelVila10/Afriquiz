@@ -113,7 +113,17 @@ export default function Play() {
       const r = data[0]
       setLog((l) => [
         ...l,
-        { position: question.q_position, text: question.q_text, seconds: secs, result: timedOut ? 'timeout' : r.r_correct ? 'correct' : 'wrong' },
+        {
+          position: question.q_position,
+          text: question.q_text,
+          seconds: secs,
+          result: timedOut ? 'timeout' : r.r_correct ? 'correct' : 'wrong',
+          // para a revisão no fim do jogo
+          options: question.q_options,
+          chosen: choice,
+          correctIndex: r.r_correct_index,
+          explanation: r.r_explanation,
+        },
       ])
       setScore(r.r_score)
       setFeedback({ correct: r.r_correct, correctIndex: r.r_correct_index, explanation: r.r_explanation, finished: r.r_finished })

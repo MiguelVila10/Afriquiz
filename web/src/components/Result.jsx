@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { prefersReducedMotion, stagger, useCountUp } from '../lib/motion'
 import Podium from './Podium'
+import { LearnMorePanel, ReviewPanel } from './ResultExtras'
 
 const STATUS = {
   correct: { label: 'Certa', icon: '✓' },
@@ -215,6 +216,9 @@ export default function Result({ score, total, log, category, categoryName, user
             <Podium rows={ranking} me={profile?.username} baseDelay={1000} />
           )}
         </section>
+
+        <ReviewPanel log={log} />
+        <LearnMorePanel category={category} categoryName={categoryName} />
       </div>
     </div>
   )
