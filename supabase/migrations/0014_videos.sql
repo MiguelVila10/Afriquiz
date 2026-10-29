@@ -7,13 +7,14 @@ create table public.videos (
   description  text check (description is null or char_length(description) <= 3000),
   category_id  smallint references public.categories(id),
   hidden       boolean not null default false,
-  created_by   uuid references auth.users(id) on delete set null,
+  created_by   uuid,
   created_at   timestamptz not null default now()
 );
 create index videos_created_idx on public.videos (created_at desc);
 
 alter table public.videos enable row level security;
-revoke all on public.videos from anon, authenticated;
+-- Sem políticas de escrita: com RLS ligado, ninguém escreve diretamente;
+-- só as funções admin_* abaixo (que verificam o administrador) alteram a tabela.
 grant select on public.videos to anon, authenticated;
 
 -- Toda a gente vê os vídeos visíveis; o administrador vê também os ocultos
