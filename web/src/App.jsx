@@ -9,6 +9,8 @@ import Community from './pages/Community'
 import IdeaDetail from './pages/IdeaDetail'
 import Learn from './pages/Learn'
 import Article from './pages/Article'
+import Videos from './pages/Videos'
+import Video from './pages/Video'
 import Contribute from './pages/Contribute'
 import Profile from './pages/Profile'
 import Admin from './pages/Admin'
@@ -28,6 +30,8 @@ export default function App() {
         <Route path="comunidade/:id" element={<IdeaDetail />} />
         <Route path="aprender" element={<Learn />} />
         <Route path="aprender/:id" element={<Article />} />
+        <Route path="videos" element={<Videos />} />
+        <Route path="videos/:id" element={<Video />} />
         <Route path="contribuir" element={<Contribute />} />
         <Route path="perfil" element={<RequireAuth><Profile /></RequireAuth>} />
         <Route path="admin" element={<RequireAuth admin><Admin /></RequireAuth>} />

@@ -5,6 +5,7 @@ import { useCategories, formatDate } from '../lib/categories'
 import { Alert, Page, Paragraphs, Spinner, StatusBadge } from '../components/ui'
 import Avatar from '../components/Avatar'
 import { useAvatars } from '../lib/avatars'
+import AdminVideos from '../components/AdminVideos'
 
 const LETTERS = ['A', 'B', 'C', 'D']
 
@@ -352,7 +353,7 @@ export default function Admin() {
     setError(null)
     const { data: c } = await supabase.rpc('admin_counts')
     setCounts(c?.[0] ?? null)
-    if (tab === 'utilizadores') return
+    if (tab === 'utilizadores' || tab === 'videos') return
     const res =
       tab === 'perguntas'
         ? await supabase.rpc('admin_list_questions', { p_status: status, p_limit: 100 })
@@ -388,8 +389,9 @@ export default function Admin() {
           <button className={tab === 'utilizadores' ? 'tab is-active' : 'tab'} onClick={() => setTab('utilizadores')}>
             Utilizadores{counts ? ` (${counts.users})` : ''}
           </button>
+          <button className={tab === 'videos' ? 'tab is-active' : 'tab'} onClick={() => setTab('videos')}>Vídeos</button>
           <span className="tabs-sep" />
-          {tab !== 'utilizadores' &&
+          {(tab === 'perguntas' || tab === 'conhecimentos') &&
             [['pending', 'Pendentes'], ['approved', 'Aprovadas'], ['rejected', 'Rejeitadas']].map(([k, l]) => (
               <button key={k} className={status === k ? 'tab tab-sm is-active' : 'tab tab-sm'} onClick={() => setStatus(k)}>{l}</button>
             ))}
@@ -397,6 +399,8 @@ export default function Admin() {
         <Alert>{error}</Alert>
         {tab === 'utilizadores' ? (
           <Users />
+        ) : tab === 'videos' ? (
+          <AdminVideos categories={categories} />
         ) : !items ? (
           <Spinner />
         ) : items.length === 0 ? (

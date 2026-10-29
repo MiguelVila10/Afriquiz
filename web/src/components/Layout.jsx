@@ -27,6 +27,7 @@ function Background() {
 const LINKS = [
   { to: '/jogar', label: 'Jogar' },
   { to: '/aprender', label: 'Aprender' },
+  { to: '/videos', label: 'Vídeos' },
   { to: '/comunidade', label: 'Comunidade' },
   { to: '/ranking', label: 'Ranking' },
   { to: '/contribuir', label: 'Contribuir' },
