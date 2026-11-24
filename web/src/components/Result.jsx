@@ -51,7 +51,7 @@ function ScoreRing({ score, total }) {
   const R = 70
   const C = 2 * Math.PI * R
   return (
-    <div className="ring" role="img" aria-label={`${score} de ${total} respostas certas (${Math.round(pct * 100)}%)`}>
+    <div className={pct === 1 ? 'ring is-perfect' : 'ring'} role="img" aria-label={`${score} de ${total} respostas certas (${Math.round(pct * 100)}%)`}>
       <svg viewBox="0 0 180 180" aria-hidden="true">
         <circle className="ring-track" cx="90" cy="90" r={R} />
         <circle

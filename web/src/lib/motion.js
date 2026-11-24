@@ -1,8 +1,56 @@
 import { useEffect, useState } from 'react'
 
-export function prefersReducedMotion() {
+// Preferência do próprio site. 'on' força o movimento mesmo com "reduzir movimento" no sistema;
+// 'off' desliga-o; sem escolha guardada segue o sistema. Tudo em try/catch (armazenamento pode estar bloqueado).
+const KEY = 'afriquiz.motion'
+
+function storedPref() {
+  try {
+    return localStorage.getItem(KEY)
+  } catch {
+    return null
+  }
+}
+
+// Estado real das animações (é o que o botão do menu mostra)
+export function getMotionPref() {
+  const s = storedPref()
+  if (s === 'on') return true
+  if (s === 'off') return false
+  return !systemReducesMotion()
+}
+
+export function setMotionPref(on) {
+  try {
+    localStorage.setItem(KEY, on ? 'on' : 'off')
+  } catch {
+    /* sem armazenamento: a escolha dura só até recarregar */
+  }
+  applyMotionPref()
+}
+
+export function applyMotionPref() {
+  if (typeof document === 'undefined') return
+  const s = storedPref()
+  const root = document.documentElement.classList
+  root.toggle('motion-on', s === 'on')
+  root.toggle('motion-off', s === 'off')
+}
+
+function systemReducesMotion() {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
+
+export function prefersReducedMotion() {
+  if (typeof document === 'undefined') return false
+  const root = document.documentElement.classList
+  if (root.contains('motion-on')) return false
+  if (root.contains('motion-off')) return true
+  return systemReducesMotion()
+}
+
+// Aplica a escolha guardada logo ao carregar o módulo
+applyMotionPref()
 
 // Conta de 0 até `target` (easing ease-out). Sem animação se o utilizador pediu menos movimento.
 export function useCountUp(target, { duration = 1100, delay = 0, decimals = 0 } = {}) {

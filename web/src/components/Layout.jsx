@@ -3,14 +3,14 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { asset } from '../lib/paths'
 import Avatar from './Avatar'
+import { getMotionPref, prefersReducedMotion, setMotionPref } from '../lib/motion'
 
 const BACKGROUNDS = ['images/bg-1.jpg', 'images/bg-2.jpg', 'images/bg-3.jpg', 'images/bg-4.jpg'].map(asset)
 
 function Background() {
   const [index, setIndex] = useState(0)
   useEffect(() => {
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reduce) return
+    if (prefersReducedMotion()) return
     const id = setInterval(() => setIndex((i) => (i + 1) % BACKGROUNDS.length), 6000)
     return () => clearInterval(id)
   }, [])
@@ -37,6 +37,7 @@ export default function Layout() {
   const { user, profile, isAdmin, signOut } = useAuth()
   const [open, setOpen] = useState(false)
   const location = useLocation()
+  const [motion, setMotion] = useState(getMotionPref)
 
   useEffect(() => setOpen(false), [location.pathname])
 
@@ -68,6 +69,17 @@ export default function Layout() {
               </NavLink>
             )}
             <span className="nav-sep" />
+            <button
+              className="link-btn"
+              aria-pressed={motion}
+              onClick={() => {
+                const next = !motion
+                setMotionPref(next)
+                setMotion(next)
+              }}
+            >
+              Animações: {motion ? 'ligadas' : 'desligadas'}
+            </button>
             {user ? (
               <>
                 <NavLink to="/perfil" className="nav-me">
